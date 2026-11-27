@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 图标源文件：三本琥珀色（旧约）+ 两本蓝色（新约）立在书架上。PNG 由它导出。 -->
+  <rect width="512" height="512" fill="#0d1220"/>
+  <rect x="126" y="182" width="44" height="190" rx="8" fill="#f5a93b"/>
+  <rect x="126" y="208" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="126" y="226" width="44" height="4" fill="#0d1220" opacity=".3"/>
+  <rect x="126" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="180" y="142" width="44" height="230" rx="8" fill="#f5a93b"/>
+  <rect x="180" y="168" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="180" y="186" width="44" height="4" fill="#0d1220" opacity=".3"/>
+  <rect x="180" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="234" y="202" width="44" height="170" rx="8" fill="#f5a93b"/>
+  <rect x="234" y="228" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="234" y="246" width="44" height="4" fill="#0d1220" opacity=".3"/>
+  <rect x="234" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="288" y="157" width="44" height="215" rx="8" fill="#5b9dff"/>
+  <rect x="288" y="183" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="288" y="201" width="44" height="4" fill="#0d1220" opacity=".3"/>
+  <rect x="288" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="342" y="187" width="44" height="185" rx="8" fill="#5b9dff"/>
+  <rect x="342" y="213" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="342" y="231" width="44" height="4" fill="#0d1220" opacity=".3"/>
+  <rect x="342" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+  <rect x="110" y="372" width="292" height="14" rx="7" fill="#eef2ff"/>
+</svg>

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>六十六卷 · 圣经书卷小游戏</title>
+  <meta name="description" content="旧约还是新约？给初中生的圣经书卷小游戏，装到平板后没有网络也能玩。">
+  <meta name="theme-color" content="#0d1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="六十六卷">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main id="app">
+
+  <!-- ============ 首页 ============ -->
+  <section class="screen scroll active" id="home">
+    <div class="wrap">
+      <header class="hero">
+        <svg class="logo" viewBox="100 130 312 268" aria-hidden="true">
+          <rect x="126" y="182" width="44" height="190" rx="8" fill="#f5a93b"/>
+          <rect x="126" y="208" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="126" y="226" width="44" height="4" fill="#0d1220" opacity=".3"/>
+          <rect x="126" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="180" y="142" width="44" height="230" rx="8" fill="#f5a93b"/>
+          <rect x="180" y="168" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="180" y="186" width="44" height="4" fill="#0d1220" opacity=".3"/>
+          <rect x="180" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="234" y="202" width="44" height="170" rx="8" fill="#f5a93b"/>
+          <rect x="234" y="228" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="234" y="246" width="44" height="4" fill="#0d1220" opacity=".3"/>
+          <rect x="234" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="288" y="157" width="44" height="215" rx="8" fill="#5b9dff"/>
+          <rect x="288" y="183" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="288" y="201" width="44" height="4" fill="#0d1220" opacity=".3"/>
+          <rect x="288" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="342" y="187" width="44" height="185" rx="8" fill="#5b9dff"/>
+          <rect x="342" y="213" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="342" y="231" width="44" height="4" fill="#0d1220" opacity=".3"/>
+          <rect x="342" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
+          <rect x="110" y="372" width="292" height="14" rx="7" fill="#eef2ff"/>
+        </svg>
+        <h1>六十六卷</h1>
+        <p>旧约还是新约？一眼分清圣经 66 卷书</p>
+      </header>
+
+      <nav class="modes">
+        <button class="mode mode-main" data-go="class-setup">
+          <span class="mode-kicker">老师带着玩 · 2–4 队</span>
+          <span class="mode-title">课堂对抗</span>
+          <span class="mode-desc">各队轮流判断，答对得分。每题答完会显示这卷书的简介，老师可以顺便讲一讲。</span>
+        </button>
+        <button class="mode" data-go="duel-setup">
+          <span class="mode-kicker">两人同屏</span>
+          <span class="mode-title">面对面抢答</span>
+          <span class="mode-desc">平板平放在桌上，两人各坐一边，看谁先按对。</span>
+        </button>
+        <button class="mode" data-go="solo-intro">
+          <span class="mode-kicker">一个人 · 可轮流挑战</span>
+          <span class="mode-title">60 秒冲刺</span>
+          <span class="mode-desc">左滑旧约，右滑新约。连对有连击加分，成绩记入排行榜。</span>
+        </button>
+        <button class="mode" data-go="shelf">
+          <span class="mode-kicker">学习 · 进度</span>
+          <span class="mode-title">书架</span>
+          <span class="mode-desc">66 卷书按类别排好，点开看简介。已掌握 <b id="home-mastered">0</b> / 66。</span>
+        </button>
+      </nav>
+
+      <footer class="foot">
+        <button class="link" id="btn-settings">设置</button>
+        <span>书卷名称依《和合本》· 新教 66 卷</span>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============ 课堂对抗：设置 ============ -->
+  <section class="screen scroll" id="class-setup">
+    <div class="wrap narrow">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>课堂对抗</h2>
+        <span></span>
+      </div>
+      <p class="lead">各队轮流答题，答对得 1 分。每题答完会显示这卷书的简介，老师点「下一题」才会继续。</p>
+
+      <div class="field">
+        <div class="label">队伍数</div>
+        <div class="seg" data-key="teams">
+          <button data-v="2">2 队</button><button data-v="3">3 队</button><button data-v="4">4 队</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">队名（可以改）</div>
+        <div class="team-names" id="team-names"></div>
+      </div>
+      <div class="field">
+        <div class="label">每队题数</div>
+        <div class="seg" data-key="perTeam">
+          <button data-v="5">5 题</button><button data-v="8">8 题</button><button data-v="12">12 题</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">出题范围</div>
+        <div class="seg" data-key="scope">
+          <button data-v="all">全部 66 卷</button><button data-v="tricky">易错专场</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">每题限时</div>
+        <div class="seg" data-key="limit">
+          <button data-v="0">不限时</button><button data-v="10">10 秒</button><button data-v="5">5 秒</button>
+        </div>
+      </div>
+
+      <button class="btn primary big" id="class-start">开始</button>
+    </div>
+  </section>
+
+  <!-- ============ 课堂对抗：答题 ============ -->
+  <section class="screen game" id="class-play">
+    <div class="hud">
+      <button class="icon-btn" data-quit aria-label="退出">✕</button>
+      <div class="scoreboard" id="class-scores"></div>
+      <div class="progress" id="class-progress"></div>
+    </div>
+    <div class="turn" id="class-turn"></div>
+    <div class="stage">
+      <div class="card" id="class-card"></div>
+    </div>
+    <div class="dock">
+      <div class="timerbar" id="class-timer"><i></i></div>
+      <div class="answers" id="class-answers">
+        <button class="ans ans-ot" data-t="OT">旧约</button>
+        <button class="ans ans-nt" data-t="NT">新约</button>
+      </div>
+      <div class="after" id="class-after" hidden>
+        <button class="btn primary big" id="class-next">下一题</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 课堂对抗：结果 ============ -->
+  <section class="screen scroll" id="class-result">
+    <div class="wrap narrow center">
+      <div class="kicker">本局结束</div>
+      <h2 class="headline" id="class-winner"></h2>
+      <ol class="board" id="class-ranking"></ol>
+      <div class="review" id="class-review"></div>
+      <div class="row">
+        <button class="btn primary" id="class-again">再来一局</button>
+        <button class="btn" data-go="home">回首页</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 面对面抢答：设置 ============ -->
+  <section class="screen scroll" id="duel-setup">
+    <div class="wrap narrow">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>面对面抢答</h2>
+        <span></span>
+      </div>
+      <p class="lead">把平板平放在桌上，两人各坐一边。书卷出现后，先按对的人得 1 分；按错了，对方得 1 分。</p>
+
+      <div class="field">
+        <div class="label">获胜分数</div>
+        <div class="seg" data-key="target">
+          <button data-v="5">先得 5 分</button><button data-v="10">先得 10 分</button><button data-v="15">先得 15 分</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">出题范围</div>
+        <div class="seg" data-key="scope">
+          <button data-v="all">全部 66 卷</button><button data-v="tricky">易错专场</button>
+        </div>
+      </div>
+
+      <button class="btn primary big" id="duel-start">开始</button>
+    </div>
+  </section>
+
+  <!-- ============ 面对面抢答：对战 ============ -->
+  <section class="screen game" id="duel-play">
+    <div class="half half-top" data-p="1"></div>
+    <div class="midbar">
+      <button class="icon-btn small" data-quit aria-label="退出">✕</button>
+      <span class="midbar-text" id="duel-target"></span>
+      <span class="midbar-actions" id="duel-end" hidden>
+        <button class="btn small primary" id="duel-again">再来一局</button>
+        <button class="btn small" data-go="home">回首页</button>
+      </span>
+    </div>
+    <div class="half half-bottom" data-p="0"></div>
+  </section>
+
+  <!-- ============ 60 秒冲刺：说明 ============ -->
+  <section class="screen scroll" id="solo-intro">
+    <div class="wrap narrow">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>60 秒冲刺</h2>
+        <span></span>
+      </div>
+      <ul class="rules">
+        <li><b>60 秒</b>之内，能分对多少卷？</li>
+        <li>往左滑是<b class="c-ot">旧约</b>，往右滑是<b class="c-nt">新约</b>，也可以直接点按钮。</li>
+        <li>连续答对有<b>连击加分</b>；答错会断连击，还要多看一眼正确答案。</li>
+      </ul>
+
+      <div class="field">
+        <div class="label">出题范围</div>
+        <div class="seg" data-key="scope">
+          <button data-v="all">全部 66 卷</button><button data-v="tricky">易错专场</button>
+        </div>
+      </div>
+
+      <button class="btn primary big" id="solo-start">开始</button>
+
+      <h3 class="section-title">排行榜</h3>
+      <ol class="board" id="solo-board"></ol>
+    </div>
+  </section>
+
+  <!-- ============ 60 秒冲刺：答题 ============ -->
+  <section class="screen game" id="solo-play">
+    <div class="hud">
+      <button class="icon-btn" data-quit aria-label="退出">✕</button>
+      <div class="solo-stat solo-time"><b id="solo-sec">60</b><small>秒</small></div>
+      <div class="solo-stat solo-points"><small>得分</small><b id="solo-score">0</b></div>
+    </div>
+    <div class="timerbar" id="solo-timer"><i></i></div>
+    <div class="combo" id="solo-combo"></div>
+    <div class="stage" id="solo-stage">
+      <div class="side-hint side-ot">旧约</div>
+      <div class="card solo-card" id="solo-card"></div>
+      <div class="side-hint side-nt">新约</div>
+    </div>
+    <div class="dock">
+      <div class="answers" id="solo-answers">
+        <button class="ans ans-ot" data-t="OT">← 旧约</button>
+        <button class="ans ans-nt" data-t="NT">新约 →</button>
+      </div>
+    </div>
+    <div class="countdown" id="solo-countdown" hidden></div>
+  </section>
+
+  <!-- ============ 60 秒冲刺：结果 ============ -->
+  <section class="screen scroll" id="solo-result">
+    <div class="wrap narrow center">
+      <div class="kicker" id="solo-kicker">时间到</div>
+      <div class="bigscore" id="solo-final">0</div>
+      <div class="stats3">
+        <div><b id="solo-right">0</b><span>答对</span></div>
+        <div><b id="solo-acc">0%</b><span>正确率</span></div>
+        <div><b id="solo-maxcombo">0</b><span>最高连击</span></div>
+      </div>
+      <form class="savebox" id="solo-save" autocomplete="off">
+        <input id="solo-name" type="text" maxlength="8" placeholder="写上名字" aria-label="名字" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="btn primary" type="submit">记入排行榜</button>
+      </form>
+      <div class="saved-note" id="solo-saved" hidden></div>
+      <div class="review" id="solo-review"></div>
+      <h3 class="section-title">排行榜</h3>
+      <ol class="board" id="solo-board2"></ol>
+      <div class="row">
+        <button class="btn primary" id="solo-again">再来一次</button>
+        <button class="btn" data-go="home">回首页</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 书架 ============ -->
+  <section class="screen scroll" id="shelf">
+    <div class="wrap">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>书架</h2>
+        <span class="right" id="shelf-count"></span>
+      </div>
+      <p class="lead">点任意一卷看简介。书脊越厚，章数越多。同一卷连续答对 3 次就算掌握，书脊会亮起来。</p>
+      <div id="shelf-body"></div>
+      <div class="review" id="shelf-missed"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 通用弹窗 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
