@@ -37,7 +37,8 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
   const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  // 只管游戏自己这个文件夹里的 GET 请求，同一个网站下别的路径一律不碰
+  if (req.method !== 'GET' || req.url.indexOf(self.registration.scope) !== 0) return;
 
   const answer = caches.open(CACHE).then(function (cache) {
     return cache.match(req, { ignoreSearch: true }).then(function (hit) {
