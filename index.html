@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>六十六卷 · 圣经书卷小游戏</title>
-  <meta name="description" content="旧约还是新约？给初中生的圣经书卷小游戏，装到平板后没有网络也能玩。">
+  <meta name="description" content="带着书卷往前跑：旧约走左门，新约走右门。给初中生的圣经书卷小游戏，装到平板后没有网络也能玩。">
   <meta name="theme-color" content="#0d1220">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -23,48 +23,23 @@
   <section class="screen scroll active" id="home">
     <div class="wrap">
       <header class="hero">
-        <svg class="logo" viewBox="100 130 312 268" aria-hidden="true">
-          <rect x="126" y="182" width="44" height="190" rx="8" fill="#f5a93b"/>
-          <rect x="126" y="208" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="126" y="226" width="44" height="4" fill="#0d1220" opacity=".3"/>
-          <rect x="126" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="180" y="142" width="44" height="230" rx="8" fill="#f5a93b"/>
-          <rect x="180" y="168" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="180" y="186" width="44" height="4" fill="#0d1220" opacity=".3"/>
-          <rect x="180" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="234" y="202" width="44" height="170" rx="8" fill="#f5a93b"/>
-          <rect x="234" y="228" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="234" y="246" width="44" height="4" fill="#0d1220" opacity=".3"/>
-          <rect x="234" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="288" y="157" width="44" height="215" rx="8" fill="#5b9dff"/>
-          <rect x="288" y="183" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="288" y="201" width="44" height="4" fill="#0d1220" opacity=".3"/>
-          <rect x="288" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="342" y="187" width="44" height="185" rx="8" fill="#5b9dff"/>
-          <rect x="342" y="213" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="342" y="231" width="44" height="4" fill="#0d1220" opacity=".3"/>
-          <rect x="342" y="338" width="44" height="9" fill="#0d1220" opacity=".3"/>
-          <rect x="110" y="372" width="292" height="14" rx="7" fill="#eef2ff"/>
-        </svg>
-        <h1>六十六卷</h1>
-        <p>旧约还是新约？一眼分清圣经 66 卷书</p>
+        <canvas class="portrait hero-portrait" id="home-portrait"></canvas>
+        <div class="hero-text">
+          <h1>六十六卷</h1>
+          <p>带着书卷往前跑：旧约走左门，新约走右门</p>
+        </div>
       </header>
 
       <nav class="modes">
-        <button class="mode mode-main" data-go="class-setup">
+        <button class="mode mode-main" data-go="relay-setup">
           <span class="mode-kicker">老师带着玩 · 2–4 队</span>
-          <span class="mode-title">课堂对抗</span>
-          <span class="mode-desc">各队轮流判断，答对得分。每题答完会显示这卷书的简介，老师可以顺便讲一讲。</span>
+          <span class="mode-title">队伍接力赛</span>
+          <span class="mode-desc">每队一个人物，轮流上场跑同样多的门，全队一起喊答案。跑完比哪队答对的多。</span>
         </button>
-        <button class="mode" data-go="duel-setup">
-          <span class="mode-kicker">两人同屏</span>
-          <span class="mode-title">面对面抢答</span>
-          <span class="mode-desc">平板平放在桌上，两人各坐一边，看谁先按对。</span>
-        </button>
-        <button class="mode" data-go="solo-intro">
+        <button class="mode" data-go="run-setup">
           <span class="mode-kicker">一个人 · 可轮流挑战</span>
-          <span class="mode-title">60 秒冲刺</span>
-          <span class="mode-desc">左滑旧约，右滑新约。连对有连击加分，成绩记入排行榜。</span>
+          <span class="mode-title">个人闯关</span>
+          <span class="mode-desc">三条命，越跑越快。看谁能冲上排行榜。</span>
         </button>
         <button class="mode" data-go="shelf">
           <span class="mode-kicker">学习 · 进度</span>
@@ -73,6 +48,15 @@
         </button>
       </nav>
 
+      <div class="more">
+        <span class="more-label">卡片玩法</span>
+        <button class="chip-btn" data-go="class-setup">课堂问答</button>
+        <button class="chip-btn" data-go="duel-setup">面对面抢答</button>
+        <button class="chip-btn" data-go="solo-intro">60 秒冲刺</button>
+      </div>
+
+      <div class="update-note" id="update-note" hidden>新版本已经下载好，关掉再打开就能用上。</div>
+
       <footer class="foot">
         <button class="link" id="btn-settings">设置</button>
         <span>书卷名称依《和合本》· 新教 66 卷</span>
@@ -80,12 +64,157 @@
     </div>
   </section>
 
-  <!-- ============ 课堂对抗：设置 ============ -->
+  <!-- ============ 队伍接力赛：设置 ============ -->
+  <section class="screen scroll" id="relay-setup">
+    <div class="wrap narrow">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>队伍接力赛</h2>
+        <span></span>
+      </div>
+      <p class="lead">每队轮流上场，跑同样多的门。题目写在顶上的卷轴上，全队一起喊：旧约点屏幕左边，新约点屏幕右边。</p>
+
+      <div class="field">
+        <div class="label">队伍数</div>
+        <div class="seg" data-key="teams">
+          <button data-v="2">2 队</button><button data-v="3">3 队</button><button data-v="4">4 队</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">各队的人物和队名（队名可以改）</div>
+        <div class="relay-teams" id="relay-teams"></div>
+      </div>
+      <div class="field">
+        <div class="label">每队跑几道门</div>
+        <div class="seg" data-key="gates">
+          <button data-v="6">6 道</button><button data-v="8">8 道</button><button data-v="12">12 道</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">速度</div>
+        <div class="seg" data-key="pace">
+          <button data-v="slow">慢</button><button data-v="mid">中</button><button data-v="fast">快</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">出题范围</div>
+        <div class="seg" data-key="scope">
+          <button data-v="all">全部 66 卷</button><button data-v="tricky">易错专场</button>
+        </div>
+      </div>
+
+      <button class="btn primary big" id="relay-start">开始</button>
+    </div>
+  </section>
+
+  <!-- ============ 个人闯关：设置 ============ -->
+  <section class="screen scroll" id="run-setup">
+    <div class="wrap narrow">
+      <div class="topbar">
+        <button class="back" data-go="home">‹ 返回</button>
+        <h2>个人闯关</h2>
+        <span></span>
+      </div>
+
+      <div class="field">
+        <div class="label">选一个人物</div>
+        <div class="looks" id="run-looks"></div>
+      </div>
+
+      <ul class="rules">
+        <li>题目写在顶上的卷轴上。<b class="c-ot">旧约点屏幕左边</b>，<b class="c-nt">新约点屏幕右边</b>，冲进对的那扇门。</li>
+        <li>一共<b>三条命</b>：进错门或者没来得及选，都会摔一跤、丢一条命。</li>
+        <li>连续答对有<b>连击加分</b>，而且会越跑越快。</li>
+      </ul>
+
+      <div class="field">
+        <div class="label">出题范围</div>
+        <div class="seg" data-key="scope">
+          <button data-v="all">全部 66 卷</button><button data-v="tricky">易错专场</button>
+        </div>
+      </div>
+
+      <button class="btn primary big" id="run-start">开始</button>
+
+      <h3 class="section-title">排行榜</h3>
+      <ol class="board" id="run-board"></ol>
+    </div>
+  </section>
+
+  <!-- ============ 跑酷画面（接力赛和个人闯关共用） ============ -->
+  <section class="screen game" id="run-play">
+    <canvas id="run-canvas"></canvas>
+    <div class="run-hud">
+      <div class="run-top">
+        <button class="icon-btn" data-quit aria-label="退出">✕</button>
+        <div class="run-pill run-hearts" id="run-hearts"></div>
+        <div class="run-mid"><span class="run-pill" id="run-team"></span></div>
+        <div class="run-pill run-score"><small id="run-score-label">得分</small><b id="run-score">0</b></div>
+      </div>
+      <div class="run-banner" id="run-banner" hidden><span class="run-banner-name" id="run-name"></span></div>
+      <div class="run-combo" id="run-combo"></div>
+    </div>
+    <div class="run-caption" id="run-caption" hidden></div>
+    <div class="run-side run-side-ot" id="run-side-ot">‹ 旧约</div>
+    <div class="run-side run-side-nt" id="run-side-nt">新约 ›</div>
+    <div class="countdown" id="run-countdown" hidden></div>
+    <div class="run-overlay" id="run-overlay" hidden>
+      <div class="run-card">
+        <canvas class="portrait run-card-portrait" id="run-overlay-portrait"></canvas>
+        <div class="kicker" id="run-overlay-kicker"></div>
+        <h2 class="run-card-title" id="run-overlay-title"></h2>
+        <p class="run-card-text" id="run-overlay-text"></p>
+        <button class="btn primary big" id="run-overlay-btn">开始</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 个人闯关：结果 ============ -->
+  <section class="screen scroll" id="run-result">
+    <div class="wrap narrow center">
+      <canvas class="portrait result-portrait" id="run-result-portrait"></canvas>
+      <div class="kicker tight" id="run-kicker">跑完了</div>
+      <div class="bigscore" id="run-final">0</div>
+      <div class="stats3">
+        <div><b id="run-right">0</b><span>闯过的门</span></div>
+        <div><b id="run-acc">0%</b><span>正确率</span></div>
+        <div><b id="run-maxcombo">0</b><span>最高连击</span></div>
+      </div>
+      <form class="savebox" id="run-save" autocomplete="off">
+        <input id="run-name-input" type="text" maxlength="8" placeholder="写上名字" aria-label="名字" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="btn primary" type="submit">记入排行榜</button>
+      </form>
+      <div class="saved-note" id="run-saved" hidden></div>
+      <div class="review" id="run-review"></div>
+      <h3 class="section-title">排行榜</h3>
+      <ol class="board" id="run-board2"></ol>
+      <div class="row">
+        <button class="btn primary" id="run-again">再跑一次</button>
+        <button class="btn" data-go="home">回首页</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 队伍接力赛：结果 ============ -->
+  <section class="screen scroll" id="relay-result">
+    <div class="wrap narrow center">
+      <div class="kicker">接力赛结束</div>
+      <h2 class="headline" id="relay-winner"></h2>
+      <ol class="board relay-board" id="relay-ranking"></ol>
+      <div class="review" id="relay-review"></div>
+      <div class="row">
+        <button class="btn primary" id="relay-again">再来一局</button>
+        <button class="btn" data-go="home">回首页</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 课堂问答（卡片）：设置 ============ -->
   <section class="screen scroll" id="class-setup">
     <div class="wrap narrow">
       <div class="topbar">
         <button class="back" data-go="home">‹ 返回</button>
-        <h2>课堂对抗</h2>
+        <h2>课堂问答</h2>
         <span></span>
       </div>
       <p class="lead">各队轮流答题，答对得 1 分。每题答完会显示这卷书的简介，老师点「下一题」才会继续。</p>
@@ -123,7 +252,7 @@
     </div>
   </section>
 
-  <!-- ============ 课堂对抗：答题 ============ -->
+  <!-- ============ 课堂问答（卡片）：答题 ============ -->
   <section class="screen game" id="class-play">
     <div class="hud">
       <button class="icon-btn" data-quit aria-label="退出">✕</button>
@@ -146,7 +275,7 @@
     </div>
   </section>
 
-  <!-- ============ 课堂对抗：结果 ============ -->
+  <!-- ============ 课堂问答（卡片）：结果 ============ -->
   <section class="screen scroll" id="class-result">
     <div class="wrap narrow center">
       <div class="kicker">本局结束</div>
@@ -302,6 +431,7 @@
 </div>
 
 <script src="js/data.js"></script>
+<script src="js/runner.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

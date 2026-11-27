@@ -64,7 +64,10 @@
         settings: { sound: true },
         classSetup: { teams: 2, perTeam: 8, scope: 'all', limit: 10, names: DEFAULT_TEAMS.slice() },
         duelSetup: { target: 10, scope: 'all' },
-        soloSetup: { scope: 'all' }
+        soloSetup: { scope: 'all' },
+        runScores: [],  // 个人闯关排行榜
+        questSetup: { look: 'olive', scope: 'all' },
+        relaySetup: { teams: 2, gates: 8, pace: 'mid', scope: 'all', names: DEFAULT_TEAMS.slice() }
       };
     }
     let data = defaults();
@@ -84,6 +87,10 @@
     c.teams = clamp(Number(c.teams) || 2, 2, 4);
     c.perTeam = clamp(Number(c.perTeam) || 8, 1, 16);
     if (!Array.isArray(c.names)) c.names = DEFAULT_TEAMS.slice();
+    const r = data.relaySetup;
+    r.teams = clamp(Number(r.teams) || 2, 2, 4);
+    r.gates = clamp(Number(r.gates) || 8, 1, 30);
+    if (!Array.isArray(r.names)) r.names = DEFAULT_TEAMS.slice();
 
     return {
       get data() { return data; },
@@ -240,6 +247,11 @@
       },
       tick: function () { tone(880, 0, 0.05, 'square', 0.05); },
       show: function () { tone(660, 0, 0.08, 'sine', 0.14); },
+      move: function () { tone(520, 0, 0.06, 'sine', 0.08); },
+      crash: function () {
+        tone(150, 0, 0.2, 'sawtooth', 0.14);
+        tone(72, 0.04, 0.34, 'sine', 0.26);
+      },
       count: function () { tone(440, 0, 0.13, 'sine', 0.18); },
       go: function () { tone(880, 0, 0.32, 'sine', 0.2); },
       win: function () {
@@ -324,7 +336,10 @@
     App.screen = id;
     const el = document.getElementById(id);
     if (el) el.scrollTop = 0;
-    if (id === 'home') $('#home-mastered').textContent = masteredCount();
+    if (id === 'home') {
+      $('#home-mastered').textContent = masteredCount();
+      window.Runner.portrait($('#home-portrait'), lookById(Store.data.questSetup.look), 'wave');
+    }
   }
 
   const Modal = (function () {
@@ -433,11 +448,13 @@
     box.appendChild(h('div', 'review-title', title));
     const chips = h('div', 'chips');
     list.forEach(function (b) {
-      const chip = h('span', 'chip ' + b.t.toLowerCase(), b.name);
+      const chip = h('button', 'chip ' + b.t.toLowerCase(), b.name);
       chip.appendChild(h('small', null, T_NAME[b.t]));
+      chip.addEventListener('click', function () { Shelf.sheet(b); });
       chips.appendChild(chip);
     });
     box.appendChild(chips);
+    box.appendChild(h('div', 'review-hint', '点一下书卷名，可以看它的简介'));
   }
 
   // 分段选择按钮：点了就写进存档
@@ -790,18 +807,18 @@
 
   /* ================= 模式三：60 秒冲刺 ================= */
 
-  function topScores() {
-    return Store.data.scores.slice().sort(function (a, b) { return b.score - a.score || a.ts - b.ts; });
+  function topScores(list) {
+    return (list || Store.data.scores).slice().sort(function (a, b) { return b.score - a.score || a.ts - b.ts; });
   }
 
-  function paintBoard(ol, highlight) {
+  function paintBoard(ol, highlight, list) {
     ol.textContent = '';
-    const list = topScores().slice(0, 10);
-    if (!list.length) {
+    const top = topScores(list).slice(0, 10);
+    if (!top.length) {
       ol.appendChild(h('li', 'empty', '还没有成绩，来当第一个！'));
       return;
     }
-    list.forEach(function (s, i) {
+    top.forEach(function (s, i) {
       const li = h('li', (i === 0 ? 'first' : '') + (s === highlight ? ' me' : ''));
       li.appendChild(h('span', 'rank', i + 1));
       li.appendChild(h('span', 'who', s.name));
@@ -1077,6 +1094,513 @@
     return { openIntro: openIntro, answer: answer, stop: stop };
   })();
 
+  /* ================= 跑酷：出题和计分（画面在 runner.js 里） ================= */
+
+  const LOOKS = window.Runner.LOOKS;
+
+  function lookById(id) {
+    for (let i = 0; i < LOOKS.length; i++) {
+      if (LOOKS[i].id === id) return LOOKS[i];
+    }
+    return LOOKS[0];
+  }
+
+  // 一段跑：个人闯关是一整局，接力赛里是一个队的一棒
+  const Run = (function () {
+    const els = {
+      canvas: $('#run-canvas'),
+      hearts: $('#run-hearts'),
+      team: $('#run-team'),
+      score: $('#run-score'),
+      scoreLabel: $('#run-score-label'),
+      banner: $('#run-banner'),
+      name: $('#run-name'),
+      combo: $('#run-combo'),
+      caption: $('#run-caption'),
+      sideOT: $('#run-side-ot'),
+      sideNT: $('#run-side-nt'),
+      count: $('#run-countdown'),
+      overlay: $('#run-overlay'),
+      oPortrait: $('#run-overlay-portrait'),
+      oKicker: $('#run-overlay-kicker'),
+      oTitle: $('#run-overlay-title'),
+      oText: $('#run-overlay-text'),
+      oBtn: $('#run-overlay-btn')
+    };
+    let st = null;
+    let overlayAction = null;
+    let overlayShownAt = 0;
+
+    const engine = window.Runner.create(els.canvas, {
+      onGate: onGate,
+      onFinish: function () { conclude(true); },
+      paused: function () { return App.paused; }
+    });
+
+    function paintHud() {
+      const cfg = st.cfg;
+      els.hearts.textContent = '';
+      for (let i = 0; i < cfg.hearts; i++) els.hearts.appendChild(h('i', i < st.hearts ? '' : 'lost', '♥'));
+      const points = cfg.scoring === 'points';
+      els.scoreLabel.textContent = points ? '得分' : '答对';
+      els.score.textContent = points ? st.score : st.right;
+      els.team.textContent = cfg.gates
+        ? cfg.label + ' · ' + Math.min(st.asked, cfg.gates) + ' / ' + cfg.gates
+        : cfg.label + ' · 闯过 ' + st.right + ' 道门';
+      els.combo.textContent = st.combo >= 2 ? '连击 ×' + st.combo : '';
+    }
+
+    function showBanner(text) {
+      els.name.textContent = text;
+      els.name.style.setProperty('--len', Math.max(4, text.length));
+      els.banner.hidden = false;
+      restartAnim(els.banner, 'drop');
+    }
+
+    // 过门之后屏幕中间跳出来的那句话。good 的会自己飘走，bad 的留到下一题
+    function setCaption(text, cls) {
+      if (!text) {
+        els.caption.hidden = true;
+        els.caption.className = 'run-caption';
+        return;
+      }
+      els.caption.textContent = text;
+      els.caption.hidden = false;
+      els.caption.className = 'run-caption';
+      void els.caption.offsetWidth;
+      els.caption.className = 'run-caption ' + cls;
+    }
+
+    function setSides(dir) {
+      els.sideOT.classList.toggle('picked', dir === -1);
+      els.sideNT.classList.toggle('picked', dir === 1);
+      els.sideOT.classList.toggle('dim', dir === 1);
+      els.sideNT.classList.toggle('dim', dir === -1);
+    }
+
+    /*
+     * cfg:
+     *   look     人物            stage   从哪一段天色开始（0 清晨 … 3 夜晚）
+     *   next     取下一卷书的函数
+     *   gates    跑几道门就到终点；0 = 一直跑到没命
+     *   hearts   几条命；0 = 不限
+     *   pace     { start 一开始几秒到一道门, min 最快几秒, step 每答对一次乘多少 }
+     *   scoring  'points' 连击加分 | 'count' 只数答对几道
+     *   label    左上角显示的名字    onEnd(sum)  跑完之后做什么
+     */
+    function prepare(cfg) {
+      Timers.clear();
+      st = {
+        cfg: cfg, phase: 'ready', book: null,
+        asked: 0, right: 0, total: 0, combo: 0, maxCombo: 0, score: 0,
+        hearts: cfg.hearts, missed: [], T: cfg.pace.start, stage: cfg.stage || 0
+      };
+      els.banner.hidden = true;
+      els.overlay.hidden = true;
+      els.count.hidden = true;
+      overlayAction = null;
+      setCaption('');
+      setSides(0);
+      show('run-play');
+      engine.reset(cfg.look, st.stage);
+      engine.start();
+      engine.resize();
+      paintHud();
+    }
+
+    function countdown(n) {
+      if (!st) return;
+      if (n === undefined) n = 3;
+      els.count.hidden = false;
+      if (n === 0) {
+        els.count.textContent = '跑！';
+        els.count.classList.add('word');
+        restartAnim(els.count, 'beat');
+        Sound.go();
+        Timers.later(function () {
+          els.count.hidden = true;
+          go();
+        }, 480);
+        return;
+      }
+      els.count.classList.remove('word');
+      els.count.textContent = n;
+      restartAnim(els.count, 'beat');
+      Sound.count();
+      Timers.later(function () { countdown(n - 1); }, 720);
+    }
+
+    function go() {
+      if (!st) return;
+      st.phase = 'run';
+      engine.run(st.T);
+      Timers.later(ask, 550);
+    }
+
+    function ask() {
+      if (!st || st.phase !== 'run') return;
+      const cfg = st.cfg;
+      if (els.caption.className.indexOf('bad') !== -1) setCaption('');
+      setSides(0);
+      if (cfg.gates && st.asked >= cfg.gates) {
+        // 门都跑完了，前面是终点线
+        st.phase = 'finishing';
+        showBanner('终点！');
+        engine.spawnFinish(Math.min(st.T, 3));
+        return;
+      }
+      st.book = cfg.next();
+      st.asked++;
+      showBanner(st.book.name);
+      engine.spawnGate(st.T);
+      Sound.show();
+      paintHud();
+    }
+
+    // 人物跑到门前的那一刻，引擎来问：他现在在哪条道上（-1 左，0 中间没选，1 右）
+    function onGate(lane) {
+      if (!st || !st.book) return { ok: false, correct: 0 };
+      const cfg = st.cfg;
+      const book = st.book;
+      const correct = book.t === 'OT' ? -1 : 1;
+      const ok = lane === correct;
+      const where = T_NAME[book.t] + ' · ' + CATEGORIES[book.cat].name;
+      st.total++;
+      record(book.id, ok);
+
+      if (ok) {
+        st.right++;
+        st.combo++;
+        if (st.combo > st.maxCombo) st.maxCombo = st.combo;
+        st.score += 10 + Math.min(st.combo - 1, 10) * 2;      // 连击加分：最多每道门 30 分
+        st.T = Math.max(cfg.pace.min, st.T * cfg.pace.step);
+        Sound.correct(st.combo);
+        setCaption('✓ ' + where, 'good');
+        // 个人闯关每过 8 道门，天色往后走一段
+        if (!cfg.gates && st.right % 8 === 0) {
+          st.stage++;
+          engine.setStage(st.stage);
+        }
+        Timers.later(ask, 450);
+      } else {
+        st.combo = 0;
+        st.missed.push(book);
+        if (cfg.next.retry) cfg.next.retry(book);
+        st.T = Math.min(cfg.pace.start, st.T * 1.12);
+        Sound.crash();
+        setCaption((lane === 0 ? '没选！' : '✗ ') + '是' + where, 'bad');
+        if (cfg.hearts) st.hearts--;
+        if (cfg.hearts && st.hearts <= 0) {
+          st.phase = 'over';
+          Timers.later(function () { conclude(false); }, 750);
+        } else {
+          Timers.later(ask, 2300);      // 多停一会儿，让大家看清正确答案
+        }
+      }
+      paintHud();
+      if (ok && st.combo >= 2) restartAnim(els.combo, 'bump');
+      engine.setGlow(st.combo >= 5 ? st.combo : 0);      // 连击 5 次以上，身后拖出星星
+      return { ok: ok, correct: correct };
+    }
+
+    function conclude(completed) {
+      if (!st || st.phase === 'done') return;
+      st.phase = 'done';
+      setSides(0);
+      if (completed) {
+        Sound.win();            // 冲线时引擎已经让人物欢呼、撒彩纸了
+      } else {
+        engine.halt('down');
+        els.banner.hidden = true;
+      }
+      const cfg = st.cfg;
+      const sum = {
+        score: st.score, right: st.right, total: st.total, maxCombo: st.maxCombo,
+        missed: st.missed.slice(), completed: completed
+      };
+      Timers.later(function () { cfg.onEnd(sum); }, completed ? 1700 : 1700);
+    }
+
+    function choose(dir) {
+      if (!st || st.phase !== 'run') return;
+      if (engine.choose(dir)) {
+        setSides(dir);
+        Sound.move();
+      }
+    }
+
+    // 盖在画面上的卡片：轮到谁、这一棒答对几道
+    function overlay(o) {
+      window.Runner.portrait(els.oPortrait, o.look, o.mood);
+      els.oKicker.textContent = o.kicker;
+      els.oTitle.textContent = o.title;
+      els.oText.textContent = o.text;
+      els.oBtn.textContent = o.button;
+      overlayAction = o.onClick;
+      overlayShownAt = performance.now();
+      els.banner.hidden = true;
+      els.overlay.hidden = false;
+    }
+
+    function pressOverlay() {
+      // 刚弹出来的 0.7 秒里不认，免得还在狂点的手指把它点掉
+      if (!overlayAction || performance.now() - overlayShownAt < 700) return;
+      const fn = overlayAction;
+      overlayAction = null;
+      els.overlay.hidden = true;
+      fn();
+    }
+
+    function stop() {
+      engine.stop();
+      st = null;
+      overlayAction = null;
+      els.overlay.hidden = true;
+      els.count.hidden = true;
+    }
+
+    // 点屏幕左半边 = 旧约，右半边 = 新约
+    els.canvas.addEventListener(DOWN, function (e) {
+      if (e.button) return;
+      e.preventDefault();
+      const x = e.touches && e.touches.length ? e.touches[0].clientX : e.clientX;
+      choose(x < window.innerWidth / 2 ? -1 : 1);
+    });
+    els.oBtn.addEventListener('click', pressOverlay);
+
+    return { prepare: prepare, countdown: countdown, overlay: overlay, pressOverlay: pressOverlay, choose: choose, stop: stop };
+  })();
+
+  /* ================= 模式：个人闯关 ================= */
+
+  const Quest = (function () {
+    const setup = function () { return Store.data.questSetup; };
+    const els = {
+      looks: $('#run-looks'),
+      board: $('#run-board'),
+      board2: $('#run-board2'),
+      form: $('#run-save'),
+      name: $('#run-name-input'),
+      saved: $('#run-saved'),
+      portrait: $('#run-result-portrait')
+    };
+    let last = null;      // 刚跑完的这一局
+
+    bindSeg($('#run-setup'), setup);
+
+    function paintLooks() {
+      els.looks.textContent = '';
+      const chosen = lookById(setup().look);
+      LOOKS.forEach(function (look) {
+        const on = look === chosen;
+        const btn = h('button', 'look' + (on ? ' on' : ''));
+        const pic = h('canvas', 'portrait');
+        btn.appendChild(pic);
+        btn.appendChild(h('span', null, look.name));
+        btn.addEventListener('click', function () {
+          setup().look = look.id;
+          Store.save();
+          paintLooks();
+        });
+        els.looks.appendChild(btn);
+        window.Runner.portrait(pic, look, on ? 'wave' : 'idle');
+      });
+    }
+
+    function openSetup() {
+      paintLooks();
+      paintBoard(els.board, null, Store.data.runScores);
+      show('run-setup');
+    }
+
+    function start() {
+      const look = lookById(setup().look);
+      last = null;
+      Run.prepare({
+        look: look, stage: 0, next: makePicker(setup().scope),
+        gates: 0, hearts: 3,
+        pace: { start: 4.2, min: 1.9, step: 0.955 },
+        scoring: 'points', label: look.name, onEnd: result
+      });
+      Run.countdown();
+    }
+
+    function result(sum) {
+      const board = topScores(Store.data.runScores);
+      const best = board.length ? board[0].score : 0;
+      const isRecord = sum.score > 0 && sum.score > best;
+      last = { sum: sum, entry: null };
+
+      $('#run-kicker').textContent = isRecord ? '新纪录！' : (sum.right ? '跑不动了' : '再试一次');
+      $('#run-final').textContent = sum.score;
+      $('#run-right').textContent = sum.right + ' 道';
+      $('#run-acc').textContent = sum.total ? Math.round(sum.right / sum.total * 100) + '%' : '—';
+      $('#run-maxcombo').textContent = sum.maxCombo;
+      els.name.value = '';
+      els.form.hidden = sum.score <= 0;
+      els.saved.hidden = true;
+      renderReview($('#run-review'), sum.missed, '这次撞错的书卷', '');
+      paintBoard(els.board2, null, Store.data.runScores);
+      window.Runner.portrait(els.portrait, lookById(setup().look), isRecord ? 'cheer' : (sum.right >= 5 ? 'wave' : 'sad'));
+
+      Run.stop();
+      lockInput(800);
+      show('run-result');
+      if (isRecord) { Sound.win(); confetti(); }
+    }
+
+    els.form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!last || last.entry) return;
+      const name = els.name.value.trim().slice(0, 8);
+      if (!name) {
+        restartAnim(els.name, 'shake');
+        els.name.focus();
+        return;
+      }
+      const sum = last.sum;
+      const entry = { name: name, score: sum.score, right: sum.right, total: sum.total, ts: Date.now() };
+      Store.data.runScores.push(entry);
+      Store.data.runScores = topScores(Store.data.runScores).slice(0, 50);
+      Store.save();
+      last.entry = entry;
+      const rank = topScores(Store.data.runScores).indexOf(entry) + 1;
+      els.name.blur();
+      els.form.hidden = true;
+      els.saved.hidden = false;
+      els.saved.textContent = rank ? '已记入排行榜，第 ' + rank + ' 名' : '已保存';
+      paintBoard(els.board2, entry, Store.data.runScores);
+    });
+
+    $('#run-start').addEventListener('click', start);
+    $('#run-again').addEventListener('click', start);
+
+    return { openSetup: openSetup, stop: function () { last = null; } };
+  })();
+
+  /* ================= 模式：队伍接力赛 ================= */
+
+  const Relay = (function () {
+    const cfg = function () { return Store.data.relaySetup; };
+    const PACE = { slow: 5.2, mid: 4.2, fast: 3.2 };       // 每道门从出现到跑到跟前，几秒
+    const box = $('#relay-teams');
+    let st = null;
+
+    function paintTeams() {
+      box.textContent = '';
+      for (let i = 0; i < cfg().teams; i++) {
+        const row = h('div', 'relay-team');
+        const pic = h('canvas', 'portrait');
+        const inp = h('input');
+        inp.type = 'text';
+        inp.maxLength = 6;
+        inp.value = cfg().names[i] || DEFAULT_TEAMS[i];
+        inp.setAttribute('aria-label', '第 ' + (i + 1) + ' 队的队名');
+        inp.setAttribute('autocomplete', 'off');
+        inp.addEventListener('input', function () {
+          cfg().names[i] = inp.value;
+          Store.save();
+        });
+        row.appendChild(pic);
+        row.appendChild(inp);
+        box.appendChild(row);
+        window.Runner.portrait(pic, LOOKS[i], 'idle');
+      }
+    }
+
+    bindSeg($('#relay-setup'), cfg, function (key) { if (key === 'teams') paintTeams(); });
+
+    function openSetup() {
+      paintTeams();
+      show('relay-setup');
+    }
+
+    function start() {
+      const c = cfg();
+      const teams = [];
+      for (let i = 0; i < c.teams; i++) {
+        teams.push({ name: String(c.names[i] || '').trim() || DEFAULT_TEAMS[i], look: LOOKS[i], right: 0 });
+      }
+      // 所有队共用一副牌，各队遇到的书卷不重复
+      st = { teams: teams, i: 0, gates: c.gates, T: PACE[c.pace] || PACE.mid, next: makeDealer(c.scope), missed: [] };
+      turn();
+    }
+
+    function turn() {
+      const team = st.teams[st.i];
+      Run.prepare({
+        look: team.look, stage: st.i, next: st.next,
+        gates: st.gates, hearts: 0,
+        pace: { start: st.T, min: st.T, step: 1 },
+        scoring: 'count', label: team.name, onEnd: afterRun
+      });
+      Run.overlay({
+        look: team.look, mood: 'wave',
+        kicker: '第 ' + (st.i + 1) + ' 棒 · 共 ' + st.teams.length + ' 队',
+        title: '轮到 ' + team.name,
+        text: '一共 ' + st.gates + ' 道门。旧约点左边，新约点右边，全队一起喊！',
+        button: '开始',
+        onClick: function () { Run.countdown(); }
+      });
+    }
+
+    function afterRun(sum) {
+      if (!st) return;
+      const team = st.teams[st.i];
+      const last = st.i + 1 >= st.teams.length;
+      team.right = sum.right;
+      st.missed = st.missed.concat(sum.missed);
+      Run.overlay({
+        look: team.look, mood: sum.right * 2 >= st.gates ? 'cheer' : 'idle',
+        kicker: team.name + ' 跑完了',
+        title: '答对 ' + sum.right + ' / ' + st.gates,
+        text: last ? '所有队伍都跑完了！' : '下一棒：' + st.teams[st.i + 1].name,
+        button: last ? '看结果' : '换下一队',
+        onClick: function () {
+          if (last) { results(); return; }
+          st.i++;
+          turn();
+        }
+      });
+    }
+
+    function results() {
+      const ranked = st.teams.slice().sort(function (a, b) { return b.right - a.right; });
+      const winners = ranked.filter(function (t) { return t.right === ranked[0].right; });
+      let headline;
+      if (winners.length === st.teams.length) headline = '平局！';
+      else if (winners.length > 1) headline = winners.map(function (t) { return t.name; }).join('、') + ' 并列第一';
+      else headline = winners[0].name + ' 获胜！';
+      $('#relay-winner').textContent = headline;
+
+      const ol = $('#relay-ranking');
+      ol.textContent = '';
+      ranked.forEach(function (t) {
+        const rank = 1 + ranked.filter(function (o) { return o.right > t.right; }).length;
+        const li = h('li', rank === 1 ? 'first' : '');
+        const pic = h('canvas', 'portrait');
+        li.appendChild(h('span', 'rank', rank));
+        li.appendChild(pic);
+        li.appendChild(h('span', 'who', t.name));
+        li.appendChild(h('b', null, t.right + ' / ' + st.gates));
+        ol.appendChild(li);
+        window.Runner.portrait(pic, t.look, rank === 1 ? 'cheer' : 'idle');
+      });
+
+      renderReview($('#relay-review'), st.missed, '这一局撞错的书卷，可以再讲一讲', '全部答对，太厉害了！');
+      Run.stop();
+      lockInput(600);
+      show('relay-result');
+      Sound.win();
+      confetti();
+    }
+
+    $('#relay-start').addEventListener('click', start);
+    $('#relay-again').addEventListener('click', start);
+
+    return { openSetup: openSetup, stop: function () { st = null; } };
+  })();
+
   /* ================= 书架 ================= */
 
   const Shelf = (function () {
@@ -1129,7 +1653,7 @@
       show('shelf');
     }
 
-    return { open: open };
+    return { open: open, sheet: sheet };
   })();
 
   /* ================= 设置 ================= */
@@ -1191,11 +1715,16 @@
     Classroom.stop();
     Duel.stop();
     Solo.stop();
+    Run.stop();
+    Quest.stop();
+    Relay.stop();
   }
 
   function navigate(to) {
     stopAll();
-    if (to === 'class-setup') Classroom.openSetup();
+    if (to === 'relay-setup') Relay.openSetup();
+    else if (to === 'run-setup') Quest.openSetup();
+    else if (to === 'class-setup') Classroom.openSetup();
     else if (to === 'solo-intro') Solo.openIntro();
     else if (to === 'shelf') Shelf.open();
     else show(to);
@@ -1214,7 +1743,7 @@
   });
   $('#btn-settings').addEventListener('click', openSettings);
 
-  // 键盘：接电脑投屏时也能玩（← 旧约，→ 新约，空格下一题；抢答上方玩家用 A / D）
+  // 键盘：接电脑投屏时也能玩（← 旧约，→ 新约，空格下一题或确认；抢答上方玩家用 A / D）
   document.addEventListener('keydown', function (e) {
     if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     const k = e.key;
@@ -1231,6 +1760,11 @@
     } else if (App.screen === 'solo-play') {
       if (k === 'ArrowLeft') Solo.answer('OT');
       else if (k === 'ArrowRight') Solo.answer('NT');
+      else used = false;
+    } else if (App.screen === 'run-play') {
+      if (k === 'ArrowLeft') Run.choose(-1);
+      else if (k === 'ArrowRight') Run.choose(1);
+      else if (k === ' ' || k === 'Enter') Run.pressOverlay();
       else used = false;
     } else if (App.screen === 'duel-play') {
       if (k === 'ArrowLeft') Duel.tap(0, 'OT');
@@ -1260,6 +1794,10 @@
   if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () { /* 注册不上就当普通网页用 */ });
+    });
+    // 后台取到了新版本：下一次打开时整套换过去
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'update-ready') $('#update-note').hidden = false;
     });
   }
 
