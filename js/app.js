@@ -2,6 +2,24 @@
 (function () {
   'use strict';
 
+  // 万一有脚本没取到（比如从最早的版本升级到一半就断了网），与其留下一个点不动的页面，
+  // 不如直接说清楚该怎么办
+  if (!window.BIBLE || !window.Runner) {
+    const box = document.createElement('div');
+    box.className = 'load-fail';
+    box.id = 'load-fail';
+    const inner = document.createElement('div');
+    const title = document.createElement('b');
+    title.textContent = '游戏还没下载完整';
+    const text = document.createElement('p');
+    text.textContent = '请连上网络，把游戏重新打开一次。之后没有网络也能玩。';
+    inner.appendChild(title);
+    inner.appendChild(text);
+    box.appendChild(inner);
+    document.body.appendChild(box);
+    return;
+  }
+
   const BIBLE = window.BIBLE;
   const BOOKS = BIBLE.BOOKS;
   const CATEGORIES = BIBLE.CATEGORIES;

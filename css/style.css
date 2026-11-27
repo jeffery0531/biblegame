@@ -880,6 +880,21 @@ input::placeholder { color: var(--muted); font-weight: 400; }
 .set-row .btn { flex: none; margin-left: 12px; min-width: 76px; }
 .set-note { padding-top: 14px; border-top: 1.5px solid var(--line); color: var(--muted); font-size: 15px; line-height: 1.6; text-align: left; }
 
+/* ---------- 脚本没取全时的提示 ---------- */
+.load-fail {
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: var(--bg);
+  text-align: center;
+}
+.load-fail b { display: block; font-size: 30px; font-weight: 800; margin-bottom: 10px; }
+.load-fail p { color: var(--soft); font-size: 20px; line-height: 1.6; max-width: 20em; }
+
 /* ---------- 彩纸 ---------- */
 .confetti { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; overflow: hidden; pointer-events: none; }
 .confetti i {
